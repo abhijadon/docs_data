@@ -194,3 +194,16 @@ cursor.forEach(app => {
 ### find the values for greater than or less than or equal to $eq $ne $gt $gte $lt $lte $in $nin
 db.payments.countDocuments({paid_amount:{$gte:5000}})
 
+### in operator
+db.payments.countDocuments({paid_amount:{$in:[5000, 6000,3000]}})
+
+### limit()
+db.payments.find({ paid_amount: { $lt: 5000 } }).limit(5).itcount()
+
+db.payments.find({ paid_amount: { $lt: 5000 } }).limit(5).itcount()
+db.payments.find({paid_amount: {$lt: 5000}}).limit(2).skip(1)
+
+### sorting data(-1 for descending and 1 for ascending )
+db.payments.find({paid_amount:{$lt:5000}}).sort({paid_amount:-1}).limit(5)
+
+
