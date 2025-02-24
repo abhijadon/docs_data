@@ -191,4 +191,6 @@ cursor.forEach(app => {
         print(No matching records found for application ${app._id});
     }
 });
-APEKSHA BHULLAKKAD PAGAL
+### find the values for greater than or less than or equal to $eq $ne $gt $gte $lt $lte $in $nin
+db.payments.countDocuments({paid_amount:{$gte:5000}})
+
