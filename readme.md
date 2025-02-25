@@ -206,4 +206,12 @@ db.payments.find({paid_amount: {$lt: 5000}}).limit(2).skip(1)
 ### sorting data(-1 for descending and 1 for ascending )
 db.payments.find({paid_amount:{$lt:5000}}).sort({paid_amount:-1}).limit(5)
 
+### $and $or $nor operator
+ db.payments.find({$nor:[{paid_amount:{$lt:5000}},{'institute_name':'DES'}]})
+
+### db.payments.find({paid_amount:{$exists:true}}).count()
+
+
+
+
 
