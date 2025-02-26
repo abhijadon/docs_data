@@ -211,6 +211,173 @@ db.payments.find({paid_amount:{$lt:5000}}).sort({paid_amount:-1}).limit(5)
 
 ### db.payments.find({paid_amount:{$exists:true}}).count()
 
+### rename a field
+ erp_sode> db.payments.updateOne(
+... {student_name: 'Atanu Adhikary'},
+... {$set:{name:'Khushboo Das'}}
+... )
+
+### to update in bulk fastly 
+let cursor = db.applications.find(); // Fetch all application records
+
+cursor.forEach(app => {
+    let updateFields = {};
+
+    // Find matching subcourse from subcourses collection
+    let subcourseRecord = db.subcourses.findOne({ name: app.subcourse });
+    if (subcourseRecord) {
+        updateFields.subcourse = subcourseRecord._id;
+    }
+
+    // Ensure previousData exists and is an array
+    if (app.previousData && Array.isArray(app.previousData) && app.previousData.length > 0) {
+        let updatedPreviousData = app.previousData.map((entry) => {
+            let updatedEntry = { ...entry };
+
+            // Find matching installment_type from InstallmentType collection
+            if (entry.installment_type) {
+                let installmentRecord = db.installmenttypes.findOne({ name: entry.installment_type });
+                if (installmentRecord) {
+                    updatedEntry.installment_type = installmentRecord._id;
+                }
+            }
+
+            // Find matching paymentStatus from PaymentType collection
+            if (entry.paymentStatus) {
+                let paymentStatusRecord = db.paymenttypes.findOne({ name: entry.paymentStatus });
+                if (paymentStatusRecord) {
+                    updatedEntry.paymentStatus = paymentStatusRecord._id;
+                }
+            }
+
+            // Find matching payment_mode from PaymentMode collection
+            if (entry.payment_mode) {
+                let paymentModeRecord = db.paymentmodes.findOne({ name: entry.payment_mode });
+                if (paymentModeRecord) {
+                    updatedEntry.payment_mode = paymentModeRecord._id;
+                }
+            }
+
+            // Find matching payment_type from PaymentStatus collection
+            if (entry.payment_type) {
+                let paymentTypeRecord = db.paymentstatuses.findOne({ name: entry.payment_type });
+                if (paymentTypeRecord) {
+                    updatedEntry.payment_type = paymentTypeRecord._id;
+                }
+            }
+
+            return updatedEntry;
+        });
+
+        updateFields.previousData = updatedPreviousData;
+    } else {
+        print(Skipping application ${app._id} - previousData is missing or not an array);
+    }
+
+    // Update the application record if there are fields to update
+    if (Object.keys(updateFields).length > 0) {
+        db.applications.updateOne(
+            { _id: app._id }, // Match application by its own _id
+            { $set: updateFields } // Update all matching fields
+        );
+
+        print(Updated application ${app._id}: ${JSON.stringify(updateFields)});
+    } else {
+        print(No matching records found for application ${app._id});
+    }
+});
+
+Abhishek Jadon, Thu 23:57
+https://meet.google.com/wxd-fetd-sxx?authuser=0
+
+Abhishek Jadon, Sat 11:06
+mongodb+srv://abhishek:abhishek2024@cluster0.dq77zco.mongodb.net/erp_sode?retryWrites=true&w=majority
+
+Abhishek Jadon, 1 min
+
+// Fetch all applications
+let cursor = db.applications.find().toArray();
+
+// Fetch all required mapping data in bulk for efficiency
+let subcourseMap = db.subcourses.find().toArray().reduce((acc, subcourse) => {
+    acc[subcourse.name] = subcourse._id;
+    return acc;
+}, {});
+
+let installmentMap = db.installmenttypes.find().toArray().reduce((acc, installment) => {
+    acc[installment.name] = installment._id;
+    return acc;
+}, {});
+
+let paymentStatusMap = db.paymenttypes.find().toArray().reduce((acc, paymentType) => {
+    acc[paymentType.name] = paymentType._id;
+    return acc;
+}, {});
+
+let paymentModeMap = db.paymentmodes.find().toArray().reduce((acc, paymentMode) => {
+    acc[paymentMode.name] = paymentMode._id;
+    return acc;
+}, {});
+
+let paymentTypeMap = db.paymentstatuses.find().toArray().reduce((acc, paymentStatus) => {
+    acc[paymentStatus.name] = paymentStatus._id;
+    return acc;
+}, {});
+
+// Process applications
+cursor.forEach(app => {
+    let updateFields = {}; // Object to store fields to be updated
+
+    // Update subcourse field using preloaded map
+    if (app.subcourse && subcourseMap[app.subcourse]) {
+        updateFields.subcourse = subcourseMap[app.subcourse];
+    }
+
+    // Ensure previousData exists and is an array before processing
+    if (app.previousData && Array.isArray(app.previousData) && app.previousData.length > 0) {
+        let updatedPreviousData = app.previousData.map((entry) => {
+            let updatedEntry = { ...entry };
+
+            // Update installment_type
+            if (entry.installment_type && installmentMap[entry.installment_type]) {
+                updatedEntry.installment_type = installmentMap[entry.installment_type];
+            }
+
+            // Update paymentStatus
+            if (entry.paymentStatus && paymentStatusMap[entry.paymentStatus]) {
+                updatedEntry.paymentStatus = paymentStatusMap[entry.paymentStatus];
+            }
+
+            // Update payment_mode
+            if (entry.payment_mode && paymentModeMap[entry.payment_mode]) {
+                updatedEntry.payment_mode = paymentModeMap[entry.payment_mode];
+            }
+
+            // Update payment_type
+            if (entry.payment_type && paymentTypeMap[entry.payment_type]) {
+                updatedEntry.payment_type = paymentTypeMap[entry.payment_type];
+            }
+
+            return updatedEntry;
+        });
+
+        updateFields.previousData = updatedPreviousData;
+    } else {
+        print(Skipping application ${app._id} - previousData is missing or not an array);
+    }
+
+    // Update multiple applications where needed
+    if (Object.keys(updateFields).length > 0) {
+        let result = db.applications.updateMany(
+            { _id: app._id }, // Match application by _id
+            { $set: updateFields } // Apply updates
+        );
+
+        print(Updated ${result.modifiedCount} applications for ID: ${app._id});
+    } else {
+        print(No updates needed for application ${app._id});
+    }
+});
 
 
 
